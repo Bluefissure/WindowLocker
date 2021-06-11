@@ -1,0 +1,11 @@
+{
+  "Author": "Bluefissure",
+  "Name": "Window Locker",
+  "Description": "A simple plugin that lock the positions of specified windows. /windowlocker to open.",
+  "InternalName": "WindowLocker",
+  "AssemblyVersion": "1.0.0.1",
+  "RepoUrl": "https://github.com/Bluefissure/WindowLocker",
+  "ApplicableVersion": "any",
+  "Tags": [ "Bluefissure", "UI", "window" ],
+  "DalamudApiLevel": 3
+}
