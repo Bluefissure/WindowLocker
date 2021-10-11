@@ -2,9 +2,9 @@
 using Dalamud.Plugin;
 using Dalamud.Hooking;
 using System;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using Dalamud.Game;
+using Dalamud.Logging;
 
 namespace WindowLocker
 {
@@ -16,6 +16,8 @@ namespace WindowLocker
         internal string lastMovedWindowName = "";
 
         private DalamudPluginInterface pi;
+        private SigScanner TargetModuleScanner;
+        private CommandManager CommandManager;
         internal Configuration config;
         private PluginUI ui;
 
@@ -23,12 +25,14 @@ namespace WindowLocker
         private delegate IntPtr SetUiPositionDelegate(IntPtr _this, IntPtr uiObject, ulong y);
         private Hook<SetUiPositionDelegate> setUiPositionHook;
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin(DalamudPluginInterface pluginInterface, SigScanner sigScanner, CommandManager commandManager)
         {
             this.pi = pluginInterface;
+            TargetModuleScanner = sigScanner;
+            CommandManager = commandManager;
 
 
-            setUiPositionAddress = this.pi.TargetModuleScanner.ScanText("40 53 48 83 EC 20 80 A2 ?? ?? ?? ?? ??");
+            setUiPositionAddress = this.TargetModuleScanner.ScanText("40 53 48 83 EC 20 80 A2 ?? ?? ?? ?? ??");
             setUiPositionHook = new Hook<SetUiPositionDelegate>(setUiPositionAddress, new SetUiPositionDelegate(SetUiPositionDetour));
             setUiPositionHook.Enable();
 
@@ -37,14 +41,14 @@ namespace WindowLocker
 
             this.ui = new PluginUI(this);
 
-            this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "A useful message to display in /xlhelp"
             });
 
 
-            this.pi.UiBuilder.OnBuildUi += DrawUI;
-            this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
+            this.pi.UiBuilder.Draw += DrawUI;
+            this.pi.UiBuilder.OpenConfigUi += DrawConfigUI;
         }
 
         private unsafe IntPtr SetUiPositionDetour(IntPtr _this, IntPtr uiObject, ulong a3)
@@ -62,7 +66,7 @@ namespace WindowLocker
             setUiPositionHook.Disable();
             this.ui.Dispose();
 
-            this.pi.CommandManager.RemoveHandler(commandName);
+            this.CommandManager.RemoveHandler(commandName);
             this.pi.Dispose();
         }
 
